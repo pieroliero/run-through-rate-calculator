@@ -723,18 +723,27 @@ async function shareScore() {
   animateEls.forEach(a => a.remove());
 
   try {
-    const canvas = await html2canvas(el, {
-      scale: 2,
-      backgroundColor: '#1a2035',
-      useCORS: true,
-      logging: false
-    });
+    const timeout = (ms) => new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), ms));
+    const canvas = await Promise.race([
+      html2canvas(el, {
+        scale: 2,
+        backgroundColor: '#1a2035',
+        useCORS: true,
+        logging: false
+      }),
+      timeout(8000)
+    ]);
 
     animateEls.forEach((a, i) => animateParents[i] && animateParents[i].appendChild(a));
 
-    const isIG = /Instagram/i.test(navigator.userAgent);
+    // Instagram, Facebook, Threads, TikTok, Snapchat, LinkedIn, and similar in-app browsers all
+    // have unreliable or fully broken Web Share / file-download APIs by design (a platform
+    // restriction, not something fixable from the page's own code). For all of these, skip the
+    // native share attempt entirely and go straight to the long-press-to-save image, which is
+    // the one method that reliably works everywhere.
+    const isInAppBrowser = /Instagram|FBAN|FBAV|FB_IAB|BytedanceWebview|musical_ly|TikTok|Threads|Barcelona|LinkedInApp|Snapchat|Pinterest/i.test(navigator.userAgent);
 
-    if (isIG) {
+    if (isInAppBrowser) {
       // Instagram's in-app browser can't share or download files -- show the image for long-press save instead.
       const dataURL = canvas.toDataURL('image/png');
       showIGOverlay(dataURL);
@@ -766,7 +775,14 @@ async function shareScore() {
 
   } catch (e) {
     animateEls.forEach((a, i) => animateParents[i] && !a.parentNode && animateParents[i].appendChild(a));
-    alert('Could not generate image. Try screenshotting instead.');
+    // Image generation timed out or failed -- don't leave the user stuck, fall back to a text-only share.
+    if (navigator.share) {
+      navigator.share({ title: 'Run Through Rate', text, url }).catch(() => {});
+    } else {
+      navigator.clipboard.writeText(`${text} ${url}`).then(() => alert('Copied to clipboard!')).catch(() => {
+        alert('Could not generate image. Try screenshotting instead.');
+      });
+    }
     resetBtn();
   }
 }
@@ -800,7 +816,11 @@ function openShareModal(blob, text, url) {
   img.src = shareModalBlobUrl;
 
   document.getElementById('share-modal-text-btn').onclick = () => {
-    window.location.href = `sms:?&body=${encodeURIComponent(text + ' ' + url)}`;
+    const isiOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+    const smsUrl = isiOS
+      ? `sms:&body=${encodeURIComponent(text + ' ' + url)}`
+      : `sms:?body=${encodeURIComponent(text + ' ' + url)}`;
+    window.location.href = smsUrl;
   };
   document.getElementById('share-modal-download-btn').onclick = () => {
     const dlLink = document.createElement('a');
