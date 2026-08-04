@@ -741,6 +741,22 @@ async function shareScore() {
   el.style.animation = 'none';
   el.style.opacity = '1';
 
+  // The Share/Discord buttons live inside #result-card, so a naive capture screenshots the
+  // buttons themselves (including mid-click text like "Generating..."), and neither is clickable
+  // in a static image anyway. Swap that row for a branded CTA line just for the capture, then
+  // restore the real buttons after.
+  const ctaRow = document.getElementById('post-unlock-ctas');
+  const prevCtaHTML = ctaRow ? ctaRow.innerHTML : null;
+  const prevCtaDisplay = ctaRow ? ctaRow.style.display : null;
+  if (ctaRow) {
+    ctaRow.style.display = 'block';
+    ctaRow.innerHTML = `
+      <div style="text-align:center; padding-top:4px;">
+        <div style="font-size:14px; color:var(--muted); font-weight:600; margin-bottom:6px;">Calculate hers &rarr; link in bio</div>
+        <div style="font-size:13px; color:var(--gold); font-weight:700;">Passport Pro&trade; &middot; By PieroLiero</div>
+      </div>`;
+  }
+
   try {
     const timeout = (ms) => new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), ms));
     const canvas = await Promise.race([
@@ -755,6 +771,7 @@ async function shareScore() {
 
     el.style.opacity = prevOpacity;
     el.style.animation = prevAnimation;
+    if (ctaRow) { ctaRow.innerHTML = prevCtaHTML; ctaRow.style.display = prevCtaDisplay; }
     animateEls.forEach((a, i) => animateParents[i] && animateParents[i].appendChild(a));
 
     // Instagram, Facebook, Threads, TikTok, Snapchat, LinkedIn, and similar in-app browsers all
@@ -797,6 +814,7 @@ async function shareScore() {
   } catch (e) {
     el.style.opacity = prevOpacity;
     el.style.animation = prevAnimation;
+    if (ctaRow) { ctaRow.innerHTML = prevCtaHTML; ctaRow.style.display = prevCtaDisplay; }
     animateEls.forEach((a, i) => animateParents[i] && !a.parentNode && animateParents[i].appendChild(a));
     // Image generation timed out or failed -- don't leave the user stuck, fall back to a text-only share.
     if (navigator.share) {
