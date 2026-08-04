@@ -707,13 +707,20 @@ function submitEmail() {
 }
 
 async function shareScore() {
+  const originalBtnText = '\uD83D\uDCE4 Share Score';
   const btn = document.getElementById('share-score-btn');
-  const originalBtnText = btn ? btn.textContent : '';
   if (btn) { btn.textContent = 'Generating...'; btn.disabled = true; }
 
   const text = `Run Through Rate is ${finalScore.toFixed(1)} - ${finalZone.share}`;
   const url = window.location.href;
-  const resetBtn = () => { if (btn) { btn.textContent = originalBtnText; btn.disabled = false; } };
+  // Re-query by ID rather than closing over the original element reference: the CTA row's
+  // innerHTML gets swapped out and back during capture (see below), which creates a brand new
+  // button element. Resetting the old detached reference would silently do nothing, leaving
+  // the on-screen button stuck on "Generating..." forever.
+  const resetBtn = () => {
+    const liveBtn = document.getElementById('share-score-btn');
+    if (liveBtn) { liveBtn.textContent = originalBtnText; liveBtn.disabled = false; }
+  };
 
   const el = document.getElementById('result-card');
   if (!el || typeof html2canvas === 'undefined') {
@@ -838,7 +845,7 @@ function showIGOverlay(dataURL) {
   card.innerHTML = `
     <img src="${dataURL}" alt="Run Through Rate result" style="width:100%; border-radius:10px; box-shadow:0 4px 20px rgba(0,0,0,0.4);" />
     <div style="color:white; font-size:14px; font-weight:700; margin-top:14px; line-height:1.5;">
-      <span style="color:#f0a500;">Hold down on the image</span> to save it to your camera roll.
+      <span style="color:#f0a500;">Hold down on the image</span> to share it via text.
     </div>
   `;
 
