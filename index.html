@@ -302,8 +302,8 @@
         <div class="val" id="live-score">0.0</div>
       </div>
 
-      <div class="q-step">Age Range Where Most Of This Happened</div>
-      <div class="q-note">Sets your multiplier. Older brackets, less forgiveness.</div>
+      <div class="q-step">Subjects Age Range</div>
+      <div class="q-note">Sets their multiplier. Older brackets, less forgiveness.</div>
       <div class="opt-grid" id="age-grid"></div>
 
       <div class="chart-box" id="live-chart"></div>
@@ -344,8 +344,51 @@
 
 </div>
 
+<!-- SHARE POP-UP -->
+<div id="share-modal-overlay">
+  <div id="share-modal-box">
+    <img id="share-modal-img" src="" alt="Run Through Rate result">
+    <button class="btn-primary" id="share-modal-text-btn">💬 Text It</button>
+    <button class="btn-secondary" id="share-modal-copy-btn">🔗 Copy Caption + Link</button>
+    <button class="btn-secondary" id="share-modal-download-btn">⬇️ Save Image</button>
+    <button class="btn-retake" id="share-modal-close-btn">Close</button>
+  </div>
+</div>
+
 <style>
 @keyframes alertPulse { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.15); opacity: 0.7; } }
+
+#share-modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(10,10,26,0.82);
+  backdrop-filter: blur(4px);
+  z-index: 999;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+#share-modal-overlay.active { display: flex; }
+#share-modal-box {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 20px;
+  max-width: 420px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  text-align: center;
+}
+#share-modal-img {
+  width: 100%;
+  border-radius: 14px;
+  margin-bottom: 16px;
+  display: block;
+  border: 1px solid var(--border);
+}
+#share-modal-box .btn-primary, #share-modal-box .btn-secondary { margin-bottom: 10px; }
 </style>
 
 <script>
@@ -455,7 +498,7 @@ function getZone(score) {
   if (score <= 21) return { name: "Pre-Certified", desc: "Just a bit more patience. If you lock her down now, you'll be getting in right before her stock starts to peak.", tags: ["Near Optimal", "One Away", "Trending Right"] };
   if (score <= 48) return { name: "⭐ Optimal Run Through Rate", desc: "Exactly where she should be. Whoever ends up with her got the timing right.", tags: ["Peak Performance", "Statistically Ideal", "Model Approved"] };
   if (score <= 56) return { name: "Slightly Used", desc: "She's a little past her peak, still a great deal. Whoever ends up with her is buying slightly used, still under warranty.", tags: ["Slightly Past Peak", "Still Recoverable", "Model Forgives"] };
-  if (score <= 64) return { name: "Diminishing Returns", desc: "Past her prime and picking up speed. Whoever ends up with her should ask for the full Hofax.", tags: ["Past Peak", "Recoverable", "Flagged For Review"] };
+  if (score <= 64) return { name: "Diminishing Returns", desc: "Past her prime and picking up speed. Whoever ends up with her should ask for the full Hofax Report.", tags: ["Past Peak", "Recoverable", "Flagged For Review"] };
   if (score <= 78) return { name: "Certified Liability", desc: "This isn't a phase, it's a pattern. Keep a lawyer on retainer.", tags: ["Pattern Detected", "High Variance", "Proceed With Caution"] };
   if (score <= 100) return { name: "Possible Restraining Order", desc: "This isn't dating anymore, it's active risk management. Bring a lawyer, a therapist, and maybe a bodyguard.", tags: ["High Risk Profile", "Active Risk Management", "Bring A Lawyer"] };
   return { name: "No Man's Land", desc: "In desperate need of a body count reset retreat. Jk, it won't help.", tags: ["Off The Chart", "Unmodeled Outlier", "Peer Review Pending"] };
@@ -590,14 +633,14 @@ function runCalculation() {
 function renderResult() {
   document.getElementById('result-card').innerHTML = `
     <div class="result-top">
-      <div class="result-badge">Your Official Placement</div>
+      <div class="result-badge">Official Placement</div>
       <div class="result-score">${finalScore.toFixed(1)}</div>
       <div class="result-score-lbl">Run Through Rate</div>
       <div class="result-zone blurred" id="result-zone">${finalZone.name}</div>
     </div>
     <div class="result-body">
       <div class="result-exchange">
-        <div class="exchange-label">Your Position On The Curve</div>
+        <div class="exchange-label">Position On The Curve</div>
         <div class="chart-box" style="background:transparent;border:none;padding:0;margin-top:6px;" id="final-chart"></div>
       </div>
 
@@ -613,8 +656,8 @@ function renderResult() {
         <div class="result-tags">${finalZone.tags.map(t => `<span class="tag">${t}</span>`).join('')}</div>
         <div class="result-desc">${finalZone.desc}</div>
         <div class="result-cta" id="post-unlock-ctas" style="display:none;">
-          <button class="btn-primary" onclick="shareScore()">📤 Share My Score</button>
-          <button class="btn-secondary" onclick="window.open('https://discord.gg/YOUR-INVITE-HERE','_blank')">🔗 Compare Notes In The Discord</button>
+          <button class="btn-primary" onclick="shareScore()">📤 Share Score</button>
+          <button class="btn-secondary" onclick="window.open('https://whop.com/passport-pro/the-world-is-yours-0d/','_blank')">🔗 Compare Notes In The Discord</button>
         </div>
       </div>
     </div>
@@ -652,14 +695,322 @@ function submitEmail() {
   sendHeight();
 }
 
-function shareScore() {
-  const text = `My Optimal Run Through Rate is ${finalScore.toFixed(1)} — apparently that makes me "${finalZone.name}." Calculate yours:`;
-  const url = window.location.href;
-  if (navigator.share) {
-    navigator.share({ title: 'Optimal Run Through Rate', text, url }).catch(() => {});
-  } else {
-    navigator.clipboard.writeText(`${text} ${url}`).then(() => alert('Copied to clipboard!')).catch(() => {});
+function roundRectPath(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+
+function wrapCanvasText(ctx, text, maxWidth) {
+  const words = text.split(' ');
+  const lines = [];
+  let current = '';
+  words.forEach(word => {
+    const test = current ? current + ' ' + word : word;
+    if (current && ctx.measureText(test).width > maxWidth) {
+      lines.push(current);
+      current = word;
+    } else {
+      current = test;
+    }
+  });
+  if (current) lines.push(current);
+  return lines;
+}
+
+async function generateShareCanvas() {
+  if (document.fonts && document.fonts.ready) {
+    try { await document.fonts.ready; } catch (e) {}
   }
+
+  const W = 1080;
+  const measure = document.createElement('canvas').getContext('2d');
+
+  // ---- measure description wrapping ----
+  measure.font = '500 32px Inter, sans-serif';
+  const descLines = wrapCanvasText(measure, finalZone.desc, 860);
+  const descLineH = 46;
+
+  // ---- measure tag pill rows ----
+  const tagFont = '800 28px Inter, sans-serif';
+  measure.font = tagFont;
+  const tagPadX = 34, tagGap = 18, tagH = 66, maxTagRowWidth = 920;
+  let tagRows = [[]];
+  let rowW = 0;
+  finalZone.tags.forEach(t => {
+    const w = measure.measureText(t).width + tagPadX * 2;
+    if (rowW + w + tagGap > maxTagRowWidth && tagRows[tagRows.length - 1].length > 0) {
+      tagRows.push([]);
+      rowW = 0;
+    }
+    tagRows[tagRows.length - 1].push({ text: t, w });
+    rowW += w + tagGap;
+  });
+
+  // ---- layout math ----
+  const topH = 640;
+  const gap = 44;
+  const cardX = 60, cardW = W - 120;
+  const chartCardH = 620;
+  const tagsH = tagRows.length * (tagH + 18) + 10;
+  const descH = descLines.length * descLineH + 20;
+  const footerH = 130;
+  const H = topH + gap + chartCardH + gap + tagsH + descH + footerH;
+
+  const canvas = document.createElement('canvas');
+  canvas.width = W;
+  canvas.height = H;
+  const ctx = canvas.getContext('2d');
+  ctx.textAlign = 'center';
+
+  // background
+  ctx.fillStyle = '#171734';
+  ctx.fillRect(0, 0, W, H);
+  const glow = ctx.createRadialGradient(W / 2, 260, 40, W / 2, 260, 560);
+  glow.addColorStop(0, 'rgba(240,165,0,0.16)');
+  glow.addColorStop(1, 'rgba(240,165,0,0)');
+  ctx.fillStyle = glow;
+  ctx.fillRect(0, 0, W, topH);
+
+  // ---- top section ----
+  ctx.font = '800 26px Inter, sans-serif';
+  const badgeText = 'OFFICIAL PLACEMENT';
+  const badgeW = ctx.measureText(badgeText).width + 70;
+  ctx.fillStyle = 'rgba(240,165,0,0.12)';
+  ctx.strokeStyle = '#f0a500';
+  ctx.lineWidth = 2;
+  roundRectPath(ctx, W / 2 - badgeW / 2, 60, badgeW, 62, 31);
+  ctx.fill(); ctx.stroke();
+  ctx.fillStyle = '#f0a500';
+  ctx.fillText(badgeText, W / 2, 100);
+
+  ctx.fillStyle = '#f0a500';
+  ctx.font = '900 180px Inter, sans-serif';
+  ctx.fillText(finalScore.toFixed(1), W / 2, 350);
+
+  ctx.fillStyle = '#f0ede8';
+  ctx.font = '800 32px Inter, sans-serif';
+  ctx.fillText('RUN THROUGH RATE', W / 2, 400);
+
+  ctx.font = '800 44px Inter, sans-serif';
+  const zoneText = finalZone.name;
+  const zoneW = Math.min(940, ctx.measureText(zoneText).width + 100);
+  const zoneY = 440, zoneH = 96;
+  ctx.fillStyle = '#f0a500';
+  roundRectPath(ctx, W / 2 - zoneW / 2, zoneY, zoneW, zoneH, 48);
+  ctx.fill();
+  ctx.fillStyle = '#171734';
+  ctx.fillText(zoneText, W / 2, zoneY + 64);
+
+  // divider
+  ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(0, topH);
+  ctx.lineTo(W, topH);
+  ctx.stroke();
+
+  // ---- chart card ----
+  const cardY = topH + gap;
+  ctx.fillStyle = '#1a2035';
+  ctx.strokeStyle = 'rgba(240,165,0,0.2)';
+  ctx.lineWidth = 1;
+  roundRectPath(ctx, cardX, cardY, cardW, chartCardH, 20);
+  ctx.fill(); ctx.stroke();
+
+  ctx.fillStyle = '#f0ede8';
+  ctx.font = '800 32px Inter, sans-serif';
+  ctx.fillText('POSITION ON THE CURVE', W / 2, cardY + 70);
+
+  const domainLeft = cardX + 190;
+  const domainRight = cardX + cardW - 190;
+  const curveW = domainRight - domainLeft;
+  const marginW_ = 110;
+  const curveBaseY = cardY + chartCardH - 90;
+  const curveH = 320;
+  const curveTopY_ = curveBaseY - curveH;
+
+  ctx.strokeStyle = 'rgba(255,255,255,0.15)';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(domainLeft - marginW_, curveBaseY);
+  ctx.lineTo(domainRight + marginW_, curveBaseY);
+  ctx.stroke();
+
+  ctx.setLineDash([6, 8]);
+  ctx.strokeStyle = 'rgba(255,255,255,0.15)';
+  ctx.beginPath(); ctx.moveTo(domainLeft, curveTopY_); ctx.lineTo(domainLeft, curveBaseY); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(domainRight, curveTopY_); ctx.lineTo(domainRight, curveBaseY); ctx.stroke();
+  ctx.setLineDash([]);
+
+  ctx.beginPath();
+  for (let i = 0; i <= 100; i += 2) {
+    const h = curveHeight(i);
+    const px = domainLeft + (i / 100) * curveW;
+    const py = curveBaseY - h * curveH;
+    if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+  }
+  ctx.strokeStyle = '#f0a500';
+  ctx.lineWidth = 6;
+  ctx.stroke();
+
+  const x18px = domainLeft + (18 / 100) * curveW;
+  const x42px = domainLeft + (42 / 100) * curveW;
+  ctx.setLineDash([5, 6]);
+  ctx.strokeStyle = 'rgba(240,165,0,0.4)';
+  ctx.beginPath(); ctx.moveTo(x18px, curveTopY_); ctx.lineTo(x18px, curveBaseY); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(x42px, curveTopY_); ctx.lineTo(x42px, curveBaseY); ctx.stroke();
+  ctx.setLineDash([]);
+
+  ctx.fillStyle = '#f0a500';
+  ctx.font = '700 22px Inter, sans-serif';
+  ctx.fillText('OPTIMAL ZONE', (x18px + x42px) / 2, curveTopY_ - 12);
+
+  ctx.fillStyle = '#666';
+  ctx.font = 'italic 20px Inter, sans-serif';
+  ctx.fillText("you're going", domainLeft - marginW_ / 2, curveTopY_ + 26);
+  ctx.fillText('to jail', domainLeft - marginW_ / 2, curveTopY_ + 52);
+  ctx.fillText('playing with', x42px + (domainRight - x42px) * 0.68, curveTopY_ + 26);
+  ctx.fillText('fire', x42px + (domainRight - x42px) * 0.68, curveTopY_ + 52);
+  ctx.fillText("no man's", domainRight + marginW_ / 2, curveTopY_ + 26);
+  ctx.fillText('land', domainRight + marginW_ / 2, curveTopY_ + 52);
+
+  ctx.fillStyle = '#888';
+  ctx.font = '500 22px Inter, sans-serif';
+  ctx.fillText('0', domainLeft + 16, curveBaseY + 36);
+  ctx.fillText('100', domainRight - 20, curveBaseY + 36);
+
+  const sc = Math.max(0, Math.min(finalScore, 100));
+  const dh = curveHeight(sc);
+  const dTopY = curveBaseY - dh * curveH;
+  const dx = domainLeft + (sc / 100) * curveW;
+  const dy = dTopY + dotYRatio * (curveBaseY - dTopY);
+  ctx.fillStyle = '#f0a500';
+  ctx.beginPath(); ctx.arc(dx, dy, 20, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = '#f0ede8';
+  ctx.lineWidth = 5;
+  ctx.stroke();
+  ctx.fillStyle = '#171734';
+  ctx.beginPath(); ctx.arc(dx, dy, 8, 0, Math.PI * 2); ctx.fill();
+
+  // ---- tags ----
+  let tagY = cardY + chartCardH + gap;
+  tagRows.forEach(row => {
+    const totalW = row.reduce((s, t) => s + t.w, 0) + (row.length - 1) * tagGap;
+    let tx = W / 2 - totalW / 2;
+    row.forEach(t => {
+      ctx.fillStyle = 'rgba(240,165,0,0.1)';
+      ctx.strokeStyle = '#f0a500';
+      ctx.lineWidth = 2;
+      roundRectPath(ctx, tx, tagY, t.w, tagH, tagH / 2);
+      ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#f0a500';
+      ctx.font = tagFont;
+      ctx.fillText(t.text, tx + t.w / 2, tagY + tagH / 2 + 10);
+      tx += t.w + tagGap;
+    });
+    tagY += tagH + 18;
+  });
+
+  // ---- description ----
+  let descY = tagY + 26;
+  ctx.fillStyle = '#ccc';
+  ctx.font = '500 32px Inter, sans-serif';
+  descLines.forEach(line => {
+    ctx.fillText(line, W / 2, descY);
+    descY += descLineH;
+  });
+
+  // ---- footer ----
+  descY += 44;
+  ctx.fillStyle = '#8888a8';
+  ctx.font = '600 28px Inter, sans-serif';
+  ctx.fillText('Calculate hers \u2192 link in bio', W / 2, descY);
+  ctx.fillStyle = '#f0a500';
+  ctx.font = '700 24px Inter, sans-serif';
+  ctx.fillText('Passport Pro\u2122 \u00b7 By PieroLiero', W / 2, descY + 46);
+
+  return canvas;
+}
+
+let shareModalBlobUrl = null;
+
+function openShareModal(blob, text, url) {
+  const overlay = document.getElementById('share-modal-overlay');
+  const img = document.getElementById('share-modal-img');
+
+  if (shareModalBlobUrl) URL.revokeObjectURL(shareModalBlobUrl);
+  shareModalBlobUrl = URL.createObjectURL(blob);
+  img.src = shareModalBlobUrl;
+
+  // Save the image to the device automatically so it's ready to attach.
+  const link = document.createElement('a');
+  link.href = shareModalBlobUrl;
+  link.download = 'run-through-rate.png';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+
+  document.getElementById('share-modal-text-btn').onclick = () => {
+    window.location.href = `sms:?&body=${encodeURIComponent(text + ' ' + url)}`;
+  };
+  document.getElementById('share-modal-copy-btn').onclick = () => {
+    navigator.clipboard.writeText(`${text} ${url}`).then(() => alert('Caption + link copied!')).catch(() => {});
+  };
+  document.getElementById('share-modal-download-btn').onclick = () => {
+    const dlLink = document.createElement('a');
+    dlLink.href = shareModalBlobUrl;
+    dlLink.download = 'run-through-rate.png';
+    document.body.appendChild(dlLink);
+    dlLink.click();
+    document.body.removeChild(dlLink);
+  };
+  document.getElementById('share-modal-close-btn').onclick = closeShareModal;
+
+  overlay.classList.add('active');
+}
+
+function closeShareModal() {
+  document.getElementById('share-modal-overlay').classList.remove('active');
+}
+
+async function shareScore() {
+  const text = `My Run Through Rate is ${finalScore.toFixed(1)} \u2014 apparently that makes me "${finalZone.name}." Calculate hers:`;
+  const url = window.location.href;
+
+  let canvas;
+  try {
+    canvas = await generateShareCanvas();
+  } catch (e) {
+    if (navigator.share) {
+      navigator.share({ title: 'Run Through Rate', text, url }).catch(() => {});
+    } else {
+      navigator.clipboard.writeText(`${text} ${url}`).then(() => alert('Copied to clipboard!')).catch(() => {});
+    }
+    return;
+  }
+
+  canvas.toBlob(async (blob) => {
+    if (!blob) return;
+    const file = new File([blob], 'run-through-rate.png', { type: 'image/png' });
+
+    // Best path on supported mobile browsers: native OS share sheet with the image attached.
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      try {
+        await navigator.share({ files: [file], title: 'Run Through Rate', text });
+        return;
+      } catch (e) {
+        // User cancelled or share failed -- fall through to the pop-up below.
+      }
+    }
+
+    // Fallback for desktop / unsupported browsers: always show a real pop-up, never a silent download.
+    openShareModal(blob, text, url);
+  }, 'image/png');
 }
 
 function restartQuiz() {
