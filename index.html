@@ -122,6 +122,15 @@
   .stepper-btn:hover { border-color: var(--gold); }
   .stepper-btn:active { background: rgba(240,165,0,0.15); }
   .stepper-val { min-width: 18px; text-align: center; font-weight: 800; font-size: 15px; }
+  .stepper-val-input {
+    width: 44px; min-width: 44px; text-align: center; font-weight: 800; font-size: 16px;
+    font-family: 'Inter', sans-serif; color: var(--text); background: transparent;
+    border: 1px solid transparent; border-radius: 6px; padding: 4px 2px;
+    -moz-appearance: textfield; touch-action: manipulation;
+  }
+  .stepper-val-input::-webkit-outer-spin-button,
+  .stepper-val-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  .stepper-val-input:focus { outline: none; border-color: var(--gold); background: var(--card2); }
 
   .btn-next {
     width: 100%; background: var(--gold); color: #000; font-size: 15px; font-weight: 800;
@@ -302,7 +311,7 @@
       <div class="q-step">Enter Your Data</div>
       <div class="stepper-list" id="stepper-card"></div>
 
-      <button class="btn-next" id="calc-btn" disabled onclick="runCalculation()">Reveal Her Official Verdict →</button>
+      <button class="btn-next" id="calc-btn" disabled onclick="runCalculation()">Reveal Official Verdict →</button>
     </div>
   </div>
 
@@ -310,6 +319,19 @@
   <div class="screen" id="screen-calc">
     <div class="calc-spinner"></div>
     <div class="calc-label" id="calc-label">Cross-referencing chaos coefficients...</div>
+  </div>
+
+  <!-- ERROR / SYSTEM MALFUNCTION -->
+  <div class="screen" id="screen-error">
+    <div class="result-card result-reveal" style="border-color:#e63946;">
+      <div style="text-align:center; padding:44px 26px 36px;">
+        <div id="error-icon" style="font-size:56px; margin-bottom:16px; animation: alertPulse 0.9s ease-in-out infinite;">⚠️</div>
+        <div style="font-size:20px; font-weight:900; letter-spacing:1px; color:#e63946; margin-bottom:14px;">SYSTEM MALFUNCTION</div>
+        <p id="error-message" style="font-size:14px; line-height:1.7; color:#ddd; margin-bottom:28px;"></p>
+        <button class="btn-primary" style="background:#e63946;" onclick="window.open('https://www.google.com/maps/search/?api=1&query=std+testing+urgent+care+near+me','_blank')">🧪 Locate Nearest Biohazard Facility →</button>
+      </div>
+    </div>
+    <button class="btn-retake" onclick="restartQuiz()">↺ Retake The Study</button>
   </div>
 
   <!-- RESULTS -->
@@ -322,12 +344,16 @@
 
 </div>
 
+<style>
+@keyframes alertPulse { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.15); opacity: 0.7; } }
+</style>
+
 <script>
 // ---------- DATA MODEL ----------
 const categories = [
   { key: 'ons', label: 'One Night Stands', sub: '1 pt each', points: 1 },
   { key: 'fb',  label: 'Fuck Buddies', sub: '2 pts each', points: 2 },
-  { key: 'mpe', label: 'Multi-Partner Encounters', sub: '2.5 pts each', points: 2.5 },
+  { key: 'mpe', label: 'Multi-Partner Encounters', sub: '2.8 pts each', points: 2.8 },
   { key: 'sit', label: 'Situationships', sub: '3 pts each', points: 3 },
   { key: 'ltr', label: 'LTR Heartbreaks', sub: '4 pts each', points: 4 },
 ];
@@ -353,11 +379,15 @@ function renderSteppers() {
     <div class="stepper-row">
       <div>
         <div class="stepper-label">${c.label}</div>
-        <div class="stepper-sub">${c.sub}</div>
+        <div class="stepper-sub" style="display:none;">${c.sub}</div>
       </div>
       <div class="stepper-controls">
         <div class="stepper-btn" onclick="adjustCount('${c.key}', -1)">&minus;</div>
-        <div class="stepper-val" id="val-${c.key}">0</div>
+        <input class="stepper-val-input" id="val-${c.key}" type="number" inputmode="numeric" pattern="[0-9]*"
+          min="0" max="999" value="0"
+          oninput="handleStepperInput('${c.key}', this)"
+          onblur="handleStepperBlur('${c.key}', this)"
+          onfocus="this.select()">
         <div class="stepper-btn" onclick="adjustCount('${c.key}', 1)">+</div>
       </div>
     </div>
@@ -365,9 +395,21 @@ function renderSteppers() {
 }
 
 function adjustCount(key, delta) {
-  counts[key] = Math.max(0, Math.min(99, counts[key] + delta));
-  document.getElementById('val-' + key).textContent = counts[key];
+  counts[key] = Math.max(0, Math.min(999, counts[key] + delta));
+  document.getElementById('val-' + key).value = counts[key];
   liveUpdate();
+}
+
+function handleStepperInput(key, el) {
+  let n = parseInt(el.value, 10);
+  if (isNaN(n)) n = 0;
+  n = Math.max(0, Math.min(999, n));
+  counts[key] = n;
+  liveUpdate();
+}
+
+function handleStepperBlur(key, el) {
+  el.value = counts[key];
 }
 
 function renderAgeGrid() {
@@ -507,6 +549,15 @@ function liveUpdate() {
 }
 
 // ---------- FLOW ----------
+const errorMessages = [
+  "You're too much of a whore. Now initiating decontamination protocol.",
+  "Critical error. Values exceed known containment limits. Biohazard team has been notified.",
+  "Model collapse. The algorithm has seen things it cannot unsee.",
+  "Signal lost. Her coordinates place her outside the observable universe. NASA has been notified.",
+  "Overflow error. This is above our pay grade. Redirecting you to a confessional.",
+  "Data corrupted beyond recovery. The whiteboard has been evacuated.",
+];
+
 function runCalculation() {
   showScreen('screen-calc');
   const labels = [
@@ -523,6 +574,13 @@ function runCalculation() {
   setTimeout(() => {
     clearInterval(interval);
     finalScore = computeScore();
+
+    if (finalScore > 999) {
+      document.getElementById('error-message').textContent = "Critical error. Values exceed known containment limits. Biohazard team has been notified.";
+      showScreen('screen-error');
+      return;
+    }
+
     finalZone = getZone(finalScore);
     renderResult();
     showScreen('screen-results');
