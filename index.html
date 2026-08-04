@@ -629,7 +629,7 @@ function runCalculation() {
     clearInterval(interval);
     finalScore = computeScore();
 
-    if (finalScore > 999) {
+    if (finalScore > 499) {
       document.getElementById('error-message').textContent = "Critical error. Values exceed known containment limits. Biohazard team has been notified.";
       showScreen('screen-error');
       return;
