@@ -841,7 +841,7 @@ function openShareModal(blob, text, url) {
     }
     phoneInput.style.borderColor = '';
 
-    window.location.href = `sms:${phone}?&body=${encodeURIComponent(text + ' ' + url)}`;
+    window.open(`sms:${phone}?&body=${encodeURIComponent(text + ' ' + url)}`, '_blank');
   };
   document.getElementById('share-modal-download-btn').onclick = () => {
     const dlLink = document.createElement('a');
