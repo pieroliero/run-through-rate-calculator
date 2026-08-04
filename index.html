@@ -349,7 +349,10 @@
 <div id="share-modal-overlay">
   <div id="share-modal-box">
     <img id="share-modal-img" src="" alt="Run Through Rate result">
-    <button class="btn-primary" id="share-modal-text-btn">💬 Text It</button>
+    <div id="share-modal-phone-row">
+      <input type="tel" id="share-modal-phone" placeholder="Her number or a friend's" inputmode="numeric">
+      <button class="btn-primary" id="share-modal-text-btn">💬 Text It</button>
+    </div>
     <button class="btn-secondary" id="share-modal-download-btn">⬇️ Save Image</button>
     <button class="btn-retake" id="share-modal-close-btn">Close</button>
   </div>
@@ -389,6 +392,14 @@
   border: 1px solid var(--border);
 }
 #share-modal-box .btn-primary, #share-modal-box .btn-secondary { margin-bottom: 10px; }
+#share-modal-phone-row { margin-bottom: 10px; }
+#share-modal-phone {
+  width: 100%; padding: 13px; border-radius: 12px; border: 1px solid var(--border);
+  background: var(--card2); color: var(--text); font-size: 16px; margin-bottom: 8px;
+  font-family: 'Inter', sans-serif;
+}
+#share-modal-phone:focus { outline: none; border-color: var(--gold); }
+#share-modal-phone::placeholder { color: var(--muted); }
 </style>
 
 <script>
@@ -810,17 +821,27 @@ let shareModalBlobUrl = null;
 function openShareModal(blob, text, url) {
   const overlay = document.getElementById('share-modal-overlay');
   const img = document.getElementById('share-modal-img');
+  const phoneInput = document.getElementById('share-modal-phone');
+  phoneInput.value = '';
+  phoneInput.style.borderColor = '';
+  phoneInput.placeholder = "Her number or a friend's";
 
   if (shareModalBlobUrl) URL.revokeObjectURL(shareModalBlobUrl);
   shareModalBlobUrl = URL.createObjectURL(blob);
   img.src = shareModalBlobUrl;
 
   document.getElementById('share-modal-text-btn').onclick = () => {
-    const isiOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
-    const smsUrl = isiOS
-      ? `sms:&body=${encodeURIComponent(text + ' ' + url)}`
-      : `sms:?body=${encodeURIComponent(text + ' ' + url)}`;
-    window.location.href = smsUrl;
+    const phoneInput = document.getElementById('share-modal-phone');
+    const phone = phoneInput.value.replace(/\D/g, '');
+    if (!phone || phone.length < 10) {
+      phoneInput.style.borderColor = '#e74c3c';
+      phoneInput.placeholder = 'Enter a valid phone number';
+      phoneInput.focus();
+      return;
+    }
+    phoneInput.style.borderColor = '';
+
+    window.location.href = `sms:${phone}?&body=${encodeURIComponent(text + ' ' + url)}`;
   };
   document.getElementById('share-modal-download-btn').onclick = () => {
     const dlLink = document.createElement('a');
