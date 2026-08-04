@@ -503,16 +503,16 @@ function computeScore() {
 }
 
 function getZone(score) {
-  if (score <= 5) return { name: "Hasn't Left The Crib", desc: "Too innocent. Whoever ends up with her isn't dating her, he's raising her.", tags: ["Zero Data", "Developmentally Behind", "Needs A Guardian"] };
-  if (score <= 12) return { name: "Low Mileage", desc: "Barely broken in. If you're next, you're basically her training wheels. And they will come off.", tags: ["Small Sample Size", "Trending Up", "Rookie Numbers"] };
-  if (score <= 18) return { name: "Test Drive Approved", desc: "Finding her rhythm. Still a bit of training left to go before it's actually fun.", tags: ["Building Momentum", "Positive Trajectory", "Cautiously Optimistic"] };
-  if (score <= 21) return { name: "Pre-Certified", desc: "Just a bit more patience. If you lock her down now, you'll be getting in right before her stock starts to peak.", tags: ["Near Optimal", "One Away", "Trending Right"] };
-  if (score <= 48) return { name: "⭐ Optimal Run Through Rate", desc: "Exactly where she should be. Whoever ends up with her got the timing right.", tags: ["Peak Performance", "Statistically Ideal", "Model Approved"] };
-  if (score <= 56) return { name: "Slightly Used", desc: "She's a little past her peak, still a great deal. Whoever ends up with her is buying slightly used, still under warranty.", tags: ["Slightly Past Peak", "Still Recoverable", "Model Forgives"] };
-  if (score <= 64) return { name: "Diminishing Returns", desc: "Past her prime and picking up speed. Whoever ends up with her should ask for the full Hofax Report.", tags: ["Past Peak", "Recoverable", "Flagged For Review"] };
-  if (score <= 78) return { name: "Certified Liability", desc: "This isn't a phase, it's a pattern. Keep a lawyer on retainer.", tags: ["Pattern Detected", "High Variance", "Proceed With Caution"] };
-  if (score <= 100) return { name: "Possible Restraining Order", desc: "This isn't dating anymore, it's active risk management. Bring a lawyer, a therapist, and maybe a bodyguard.", tags: ["High Risk Profile", "Active Risk Management", "Bring A Lawyer"] };
-  return { name: "No Man's Land", desc: "In desperate need of a body count reset retreat. Jk, it won't help.", tags: ["Off The Chart", "Unmodeled Outlier", "Peer Review Pending"] };
+  if (score <= 5) return { name: "Hasn't Left The Crib", desc: "Too innocent. Whoever ends up with her isn't dating her, he's raising her.", tags: ["Zero Data", "Developmentally Behind", "Needs A Guardian"], share: "apparently you'd be her babysitter, she hasn't left the crib yet." };
+  if (score <= 12) return { name: "Low Mileage", desc: "Barely broken in. If you're next, you're basically her training wheels. And they will come off.", tags: ["Small Sample Size", "Trending Up", "Rookie Numbers"], share: "apparently that makes her low mileage." };
+  if (score <= 18) return { name: "Test Drive Approved", desc: "Finding her rhythm. Still a bit of training left to go before it's actually fun.", tags: ["Building Momentum", "Positive Trajectory", "Cautiously Optimistic"], share: "apparently she's test drive approved." };
+  if (score <= 21) return { name: "Pre-Certified", desc: "Just a bit more patience. If you lock her down now, you'll be getting in right before her stock starts to peak.", tags: ["Near Optimal", "One Away", "Trending Right"], share: "apparently she's pre-certified." };
+  if (score <= 48) return { name: "⭐ Optimal Run Through Rate", desc: "Exactly where she should be. Whoever ends up with her got the timing right.", tags: ["Peak Performance", "Statistically Ideal", "Model Approved"], share: "apparently she's got the optimal run through rate." };
+  if (score <= 56) return { name: "Slightly Used", desc: "She's a little past her peak, still a great deal. Whoever ends up with her is buying slightly used, still under warranty.", tags: ["Slightly Past Peak", "Still Recoverable", "Model Forgives"], share: "apparently that makes her slightly used." };
+  if (score <= 64) return { name: "Diminishing Returns", desc: "Past her prime and picking up speed. Whoever ends up with her should ask for the full Hofax Report.", tags: ["Past Peak", "Recoverable", "Flagged For Review"], share: "apparently she's hit diminishing returns." };
+  if (score <= 78) return { name: "Certified Liability", desc: "This isn't a phase, it's a pattern. Keep a lawyer on retainer.", tags: ["Pattern Detected", "High Variance", "Proceed With Caution"], share: "apparently that makes her a certified liability." };
+  if (score <= 100) return { name: "Possible Restraining Order", desc: "This isn't dating anymore, it's active risk management. Bring a lawyer, a therapist, and maybe a bodyguard.", tags: ["High Risk Profile", "Active Risk Management", "Bring A Lawyer"], share: "apparently that means a possible restraining order." };
+  return { name: "No Man's Land", desc: "In desperate need of a body count reset retreat. Jk, it won't help.", tags: ["Off The Chart", "Unmodeled Outlier", "Peer Review Pending"], share: "apparently that puts her in no man's land." };
 }
 
 // ---------- CHART ----------
@@ -711,7 +711,7 @@ async function shareScore() {
   const originalBtnText = btn ? btn.textContent : '';
   if (btn) { btn.textContent = 'Generating...'; btn.disabled = true; }
 
-  const text = `Run Through Rate is ${finalScore.toFixed(1)} - apparently that makes her ${finalZone.name.toLowerCase()}.`;
+  const text = `Run Through Rate is ${finalScore.toFixed(1)} - ${finalZone.share}`;
   const url = window.location.href;
   const resetBtn = () => { if (btn) { btn.textContent = originalBtnText; btn.disabled = false; } };
 
@@ -733,6 +733,14 @@ async function shareScore() {
   const animateParents = animateEls.map(a => a.parentNode);
   animateEls.forEach(a => a.remove());
 
+  // The card fades in with a CSS animation (opacity 0 -> 1). If Share is tapped before that
+  // finishes, html2canvas can capture it mid-fade, producing a washed-out, low-opacity image.
+  // Force it fully settled right before capture, then restore whatever was there after.
+  const prevOpacity = el.style.opacity;
+  const prevAnimation = el.style.animation;
+  el.style.animation = 'none';
+  el.style.opacity = '1';
+
   try {
     const timeout = (ms) => new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), ms));
     const canvas = await Promise.race([
@@ -745,6 +753,8 @@ async function shareScore() {
       timeout(8000)
     ]);
 
+    el.style.opacity = prevOpacity;
+    el.style.animation = prevAnimation;
     animateEls.forEach((a, i) => animateParents[i] && animateParents[i].appendChild(a));
 
     // Instagram, Facebook, Threads, TikTok, Snapchat, LinkedIn, and similar in-app browsers all
@@ -785,6 +795,8 @@ async function shareScore() {
     }, 'image/png');
 
   } catch (e) {
+    el.style.opacity = prevOpacity;
+    el.style.animation = prevAnimation;
     animateEls.forEach((a, i) => animateParents[i] && !a.parentNode && animateParents[i].appendChild(a));
     // Image generation timed out or failed -- don't leave the user stuck, fall back to a text-only share.
     if (navigator.share) {
