@@ -7,7 +7,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <meta name="theme-color" content="#f0a500">
 <meta property="og:title" content="Run Through Rate Calculator™ | Passport Pro"/>
-<meta property="og:description" content="Peer-reviewed(ish) math on how much chaos is actually optimal. Find your placement on the curve."/>
+<meta property="og:description" content="The official(ish) formula for how much chaos is actually optimal. Find your placement on the curve."/>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
 
@@ -254,8 +254,8 @@
   <div class="brand">
     <div class="brand-label">A Hoffessor Field Study</div>
     <div class="brand-title">RUN THROUGH RATE <span>CALCULATOR™</span></div>
-    <div style="font-size:22px; margin-top:4px;">🍆👠</div>
-    <div class="brand-sub">Peer-reviewed(ish) math on how much mileage is optimal before she's completely ran through.</div>
+    <div style="font-size:30px; margin-top:4px;">🍆🍆🍆👠</div>
+    <div class="brand-sub">The official(ish) formula for how much mileage is optimal before she's completely ran through.</div>
   </div>
 
   <!-- INTRO -->
@@ -309,7 +309,7 @@
 
       <div class="chart-box" id="live-chart"></div>
 
-      <div class="q-step">Enter Your Data</div>
+      <div class="q-step">Enter Data</div>
       <div class="stepper-list" id="stepper-card"></div>
 
       <button class="btn-next" id="calc-btn" disabled onclick="runCalculation()">Reveal Official Verdict →</button>
@@ -629,7 +629,7 @@ function runCalculation() {
     clearInterval(interval);
     finalScore = computeScore();
 
-    if (finalScore > 499) {
+    if (finalScore > 200) {
       document.getElementById('error-message').textContent = "Critical error. Values exceed known containment limits. Biohazard team has been notified.";
       showScreen('screen-error');
       return;
