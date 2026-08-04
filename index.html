@@ -715,13 +715,22 @@ async function shareScore() {
     return;
   }
 
+  // html2canvas hangs (sometimes indefinitely) on SVG <animate> / SMIL elements, which is
+  // what was freezing this on mobile. Strip them right before capture, then restore after,
+  // so the live chart keeps its pulsing dot but the exported image doesn't lock up the page.
+  const animateEls = Array.from(el.querySelectorAll('animate'));
+  const animateParents = animateEls.map(a => a.parentNode);
+  animateEls.forEach(a => a.remove());
+
   try {
     const canvas = await html2canvas(el, {
-      scale: 3,
+      scale: 2,
       backgroundColor: '#1a2035',
       useCORS: true,
       logging: false
     });
+
+    animateEls.forEach((a, i) => animateParents[i] && animateParents[i].appendChild(a));
 
     const isIG = /Instagram/i.test(navigator.userAgent);
 
@@ -756,6 +765,7 @@ async function shareScore() {
     }, 'image/png');
 
   } catch (e) {
+    animateEls.forEach((a, i) => animateParents[i] && !a.parentNode && animateParents[i].appendChild(a));
     alert('Could not generate image. Try screenshotting instead.');
     resetBtn();
   }
